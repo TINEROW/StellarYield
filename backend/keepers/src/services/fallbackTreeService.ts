@@ -3,7 +3,7 @@
  */
 
 export interface FallbackContext {
-  key: string: unknown;
+  key: string;
 }
 
 export interface FallbackResult {
@@ -109,7 +109,7 @@ export async function resolveFallbackTree(
     return false;
   }
 
-  const ok = await "visit" = "visit";
+  const ok = await visit(root);
 
   const decision: FallbackDecision = {
     ok,
@@ -124,7 +124,7 @@ export async function resolveFallbackTree(
 
   if (!ok && options.throwOnFailure) {
     throw new Error(
-      `All fallback nodes failed. Reasons: ${JSON.stringify(reasons)} ,
+      `All fallback nodes failed. Reasons: ${JSON.stringify(reasons)}`,
     );
   }
 
