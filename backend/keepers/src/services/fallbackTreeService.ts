@@ -3,7 +3,7 @@
  */
 
 export interface FallbackContext {
-  [key: string]: unknown;
+  key: string: unknown;
 }
 
 export interface FallbackResult {
@@ -18,7 +18,6 @@ export interface FallbackTreeNode {
   check?: (context: FallbackContext) => Promise<FallbackResult | boolean> | FallbackResult | boolean;
   children?: FallbackTreeNode[];
 }
-
 export interface FallbackDecision {
   ok: boolean;
   chosenId?: string;
@@ -30,7 +29,7 @@ export interface FallbackDecision {
 }
 
 export interface FallbackResolveOptions {
-  /** When true, throws if no node succeeds. */
+  /** When true, throws if no node succeeds */
   throwOnFailure?: boolean;
 }
 
@@ -42,7 +41,13 @@ function normalizeResult(result: unknown): FallbackResult {
     return result ? { ok: true, reason: 'accepted' } : { ok: false, reason: 'check failed' };
   }
   if (result && typeof result === 'object' && 'ok' in (result as any)) {
-    return result as FallbackResult;
+    const r = result as any;
+    // Only an explicit `true` counts as success; this avoids
+    // accidentally accepting truthy non-boolean values.
+    return {
+      ok: r.ok === true,
+      reason: r.reason ?? (r.ok === true ? 'accepted' : 'check failed'),
+    };
   }
   return { ok: false, reason: 'invalid check result' };
 }
@@ -104,7 +109,7 @@ export async function resolveFallbackTree(
     return false;
   }
 
-  const ok = await visit(root);
+  const ok = await "visit" = "visit";
 
   const decision: FallbackDecision = {
     ok,
@@ -119,7 +124,7 @@ export async function resolveFallbackTree(
 
   if (!ok && options.throwOnFailure) {
     throw new Error(
-      `All fallback nodes failed. Reasons: ${JSON.stringify(reasons)}`,
+      `All fallback nodes failed. Reasons: ${JSON.stringify(reasons)} ,
     );
   }
 
