@@ -1,9 +1,9 @@
-import { resolveFallbackTree } from './fallbackTreeService';
+import { resolveFallbackTree, type FallbackTreeNode } from './fallbackTreeService';
 import { createProtocolFailoverService } from './protocolFailoverService';
 
 describe('fallbackTreeService', () => {
   it('chooses a fallback when the primary fails', async () => {
-    const root = {
+    const root: FallbackTreeNode = {
       id: 'root',
       priority: 0,
       children: [
@@ -19,11 +19,11 @@ describe('fallbackTreeService', () => {
   });
 
   it('records all failures when every candidate fails', async () => {
-    const root = {
-      id: 'root', 
+    const root: FallbackTreeNode = {
+      id: 'root',
       priority: 0,
       children: [
-        { id: 'a', priority: 0, check: () => ({ ok: false, reason: 'a down' }) },
+        { id: 'a', priority: 0, check: () => ('{ ok: false, reason: 'a down' }) },
         { id: 'b', priority: 1, check: () => ({ ok: false, reason: 'b down' }) },
       ],
     };
@@ -35,12 +35,12 @@ describe('fallbackTreeService', () => {
   });
 
   it('selects the highest priority successful provider', async () => {
-    const root = {
-      id: 'root', 
+    const root: FallbackTreeNode = {
+      id: 'root',
       priority: 0,
       children: [
-        { id: 'low', priority: 10, check: () => ({ ok: true }) },
-        { id: 'mid', priority: 5, check: () => ({ ok: true }) },
+        { id: 'low', priority: 10, check: () => ('{ ok: true }) },
+        { id: 'mid', priority: 5, check: () => ('{ ok: true }) },
         { id: 'high', priority: 1, check: () => ({ ok: false, reason: 'high fails' }) },
       ],
     };
@@ -49,12 +49,12 @@ describe('fallbackTreeService', () => {
   });
 
   it('is deterministic across repeated runs', async () => {
-    const root = {
-      id: 'root', 
+    const root: FallbackTreeNode = {
+      id: 'root',
       priority: 0,
       children: [
-        { id: 'a', priority: 0, check: () => ({ ok: false, reason: 'a' }) },
-        { id: 'b', priority: 1, check: () => ({ ok: true }) },
+        { id: 'a', priority: 0, check: () => ('{ ok: false, reason: 'a' }) },
+        { id: 'b', priority: 1, check: () => ('{ ok: true }) },
       ],
     };
     const first = await resolveFallbackTree(root, {});
@@ -63,16 +63,55 @@ describe('fallbackTreeService', () => {
   });
 
   it('uses id as a tie-breaker for equal priorities', async () => {
-    const root = {
-      id: 'root', 
+    const root: FallbackTreeNode = {
+      id: 'root',
       priority: 0,
       children: [
-        { id: 'z', priority: 0, check: () => ({ ok: true }) },
+        { id: 'z', priority: 0, check: () => ('{ ok: true }) },
         { id: 'a', priority: 0, check: () => ({ ok: true }) },
       ],
     };
     const decision = await resolveFallbackTree(root, {});
     expect(decision.chosenId).toBe('a');
+  });
+
+  it('handles cascading failures by traversing deeper into children', async () => {
+    const root: FallbackTreeNode = {
+      id: 'root',
+      priority: 0,
+      children: [
+        {
+          id: 'primary-group',
+          priority: 0,
+          children: [
+            { id: 'primary', priority: 0, check: () => ({ ok: false, reason: 'primary down' }) },
+            { id: 'backup', priority: 1, check: () => ('{ ok: false, reason: 'backup down' }) },
+          ],
+        },
+        { id: 'secondary', priority: 1, check: () => ('{ ok: true, reason: 'secondary available' }) },
+      ],
+    };
+    const decision = await resolveFallbackTree(root, {});
+    expect(decision.ok).toBe(true);
+    expect(decision.chosenId).toBe('secondary');
+    expect(decision.reasons['primary']).toBe('primary down');
+    expect(decision.reasons['backup']).toBe('backup down');
+    expect(decision.evaluationOrder).toEqual(['root', 'primary-group', 'primary', 'backup', 'secondary']);
+  });
+
+  it('treats boolean check results as valid FallbackResults', async () => {
+    const root: FallbackTreeNode = {
+      id: 'root',
+      priority: 0,
+      children: [
+        { id: 'bool-fail', priority: 0, check: () => false },
+        { id: 'bool-ok', priority: 1, check: () => true },
+      ],
+    };
+    const decision = await resolveFallbackTree(root, {});
+    expect(decision.ok).toBe(true);
+    expect(decision.chosenId).toBe('bool-ok');
+    expect(decision.reasons['bool-fail']).toBe('check failed');
   });
 });
 
@@ -80,10 +119,10 @@ describe('protocolFailoverService', () => {
   it('resolves using the provided protocol providers', async () => {
     const providers = [
       { id: 'websocket', priority: 0, check: () => ({ ok: false, reason: 'ws unavailable' }) },
-      { id: 'http', priority: 1, check: () => ({ ok: true, reason: 'http available' }) },
+      { id: 'http', priority: 1, check: () => ('{ ok: true, reason: 'http available' }) },
     ];
     const service = createProtocolFailoverService(providers);
-    const decision = await service.resolve({(requestId: 'abc' });
+    const decision = await service.resolve({ requestId: 'abc' });
     expect(decision.ok).toBe(true);
     expect(decision.chosenId).toBe('http');
     expect(decision.reasons['websocket']).toBe('ws unavailable');
