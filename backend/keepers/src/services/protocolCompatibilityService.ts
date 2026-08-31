@@ -417,21 +417,15 @@ export function resolveFallbackTree(
             status: status.status,
             issues: status.issues,
         });
-
-        if (accepted) {
-            const selectedEvaluation = evaluations[evaluations.length - 1];
-            return {
-                selectedProviderId: candidate.providerId,
-                selectedEvaluation: selectedEvaluation ?? null,
-                evaluations,
-                deterministic: true,
-            };
-        }
     }
 
+    const selectedEvaluation = evaluations.find(
+        evaluation => evaluation.decision === 'accepted',
+    ) ?? null;
+
     return {
-        selectedProviderId: null,
-        selectedEvaluation: null,
+        selectedProviderId: selectedEvaluation?.providerId ?? null,
+        selectedEvaluation,
         evaluations,
         deterministic: true,
     };
