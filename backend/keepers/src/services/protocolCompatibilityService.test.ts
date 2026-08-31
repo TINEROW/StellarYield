@@ -297,6 +297,18 @@ describe('fallbackTreeResolution', () => {
         failureReason?: string;
     };
 
+    it('selects the primary provider when it is compatible', () => {
+        const candidates: Candidate[] = [
+            { name: 'primary', compatible: true },
+            { name: 'fallback-a', compatible: true },
+        ];
+
+        const result = resolveFallbackTree(candidates);
+
+        expect(result.selected).toBe('primary');
+        expect(result.rejected).toEqual([]);
+    });
+
     it('selects the first compatible fallback in priority order', () => {
         const candidates: Candidate[] = [
             { name: 'primary', compatible: false, failureReason: 'version mismatch' },
