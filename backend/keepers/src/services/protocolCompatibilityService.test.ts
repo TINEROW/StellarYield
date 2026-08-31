@@ -367,6 +367,40 @@ describe('fallbackTreeResolution', () => {
 
         expect(first).toEqual(second);
     });
+
+    it('does not bounce between partially valid providers', () => {
+        const req: CompatibilityRequirement = {
+            component: 'core',
+            requiredVersion: '2.0.0',
+            minVersion: '1.5.0',
+            criticalFeatures: [],
+            breakingChanges: ['fee_structure_change'],
+        };
+
+        const candidates: Candidate[] = [
+            {
+                name: 'primary',
+                compatible:
+                    evaluateProtocolCompatibility(
+                        'Blend',
+                        '1.5.0',
+                        '2.0.0',
+                        [req],
+                    ).status !== 'incompatible',
+            },
+            {
+                name: 'fallback-a',
+                compatible: true,
+            },
+        ];
+
+        const first = resolveFallbackTree(candidates);
+        const second = resolveFallbackTree(candidates);
+
+        expect(first).toEqual(second);
+        expect(first.selected).toBe('primary');
+        expect(first.rejected).toEqual([]);
+    });
 });
 
 describe('groupIssuesByAction', () => {
