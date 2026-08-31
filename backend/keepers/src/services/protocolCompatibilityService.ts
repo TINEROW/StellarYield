@@ -90,6 +90,7 @@ export interface FallbackResolution {
     selectedProviderId: string | null;
     selectedEvaluation: FallbackEvaluation | null;
     evaluations: FallbackEvaluation[];
+    rejectedEvaluations: FallbackEvaluation[];
     deterministic: true;
 }
 
@@ -361,7 +362,9 @@ export function resolveFallbackTree(
         ...fallbacks.map(fallback => fallback.providerId),
     ]);
     for (const fallback of fallbacks) {
-        const parentKey = fallback.parentProviderId != null && knownProviderIds.has(fallback.parentProviderId)
+        const parentKey = fallback.parentProviderId != null &&
+            fallback.parentProviderId !== fallback.providerId &&
+            knownProviderIds.has(fallback.parentProviderId)
             ? fallback.parentProviderId
             : primary.providerId;
         addCandidate(fallback, parentKey);
@@ -389,6 +392,17 @@ export function resolveFallbackTree(
     };
 
     visit(primary);
+
+    const unvisited = fallbacks
+        .filter(fallback => !visited.has(fallback.providerId))
+        .sort((a, b) =>
+            a.priority - b.priority ||
+            (a.providerId < b.providerId ? -1 : a.providerId > b.providerId ? 1 : 0),
+        );
+
+    for (const fallback of unvisited) {
+        visit(fallback);
+    }
 
     const evaluations: FallbackEvaluation[] = [];
 
@@ -430,10 +444,15 @@ export function resolveFallbackTree(
         evaluation => evaluation.decision === 'accepted',
     ) ?? null;
 
+    const rejectedEvaluations = evaluations.filter(
+        evaluation => evaluation.decision === 'rejected',
+    );
+
     return {
         selectedProviderId: selectedEvaluation?.providerId ?? null,
         selectedEvaluation,
         evaluations,
+        rejectedEvaluations,
         deterministic: true,
     };
 }
