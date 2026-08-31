@@ -356,14 +356,21 @@ export function resolveFallbackTree(
     };
 
     addCandidate(primary, null);
+    const knownProviderIds = new Set<string>([
+        primary.providerId,
+        ...fallbacks.map(fallback => fallback.providerId),
+    ]);
     for (const fallback of fallbacks) {
-        addCandidate(fallback, fallback.parentProviderId ?? primary.providerId);
+        const parentKey = fallback.parentProviderId != null && knownProviderIds.has(fallback.parentProviderId)
+            ? fallback.parentProviderId
+            : primary.providerId;
+        addCandidate(fallback, parentKey);
     }
 
     for (const siblings of byParent.values()) {
         siblings.sort((a, b) =>
             a.priority - b.priority ||
-            a.providerId.localeCompare(b.providerId),
+            (a.providerId < b.providerId ? -1 : a.providerId > b.providerId ? 1 : 0),
         );
     }
 
