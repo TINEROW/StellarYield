@@ -1,5 +1,6 @@
 /**
- * Fallback tree resolution with deterministic ordering and traceable failures. */
+ * Fallback tree resolution with deterministic ordering and traceable failures.
+ */
 
 export interface FallbackContext {
   [key: string]: unknown;
@@ -14,7 +15,7 @@ export interface FallbackResult {
 export interface FallbackTreeNode {
   id: string;
   priority: number;
-  check?: (context: FallbackContext) => Promise<FallbackResult> | FallbackResult;
+  check?: (context: FallbackContext) => Promise<FallbackResult | boolean> | FallbackResult | boolean;
   children?: FallbackTreeNode[];
 }
 
@@ -31,6 +32,19 @@ export interface FallbackDecision {
 export interface FallbackResolveOptions {
   /** When true, throws if no node succeeds. */
   throwOnFailure?: boolean;
+}
+
+/**
+ * Normalizes the return value of a check function to a FallbackResult.
+ */
+function normalizeResult(result: unknown): FallbackResult {
+  if (typeof result === 'boolean') {
+    return result ? { ok: true, reason: 'accepted' } : { ok: false, reason: 'check failed' };
+  }
+  if (result && typeof result === 'object' && 'ok' in (result as any)) {
+    return result as FallbackResult;
+  }
+  return { ok: false, reason: 'invalid check result' };
 }
 
 /**
@@ -56,7 +70,7 @@ export async function resolveFallbackTree(
     if (node.check) {
       let result: FallbackResult;
       try {
-        result = await node.check(context);
+        result = normalizeResult(await node.check(context));
       } catch (err) {
         result = {
           ok: false,
