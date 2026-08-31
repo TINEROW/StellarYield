@@ -1,13 +1,13 @@
-import { resolveFallbackTree } from './fallbackTreeService';
+import { resolveFallbackTree, type FallbackContext, type FallbackResult, type FallbackTreeNode } from './fallbackTreeService';
 
 export interface ProtocolProvider {
   id: string;
   priority: number;
-  check: (context: any) => Promise<any> | any;
+  check: (context: FallbackContext) => Promise<FallbackResult | boolean> | FallbackResult | boolean;
 }
 
 export function createProtocolFailoverService(providers: ProtocolProvider[]) {
-  const root = {
+  const root: FallbackTreeNode = {
     id: 'protocol-root',
     priority: 0,
     children: providers.map((p) => ({
@@ -18,6 +18,6 @@ export function createProtocolFailoverService(providers: ProtocolProvider[]) {
   };
 
   return {
-    resolve: (context: any) => resolveFallbackTree(root, context),
+    resolve: (context: FallbackContext) => resolveFallbackTree(root, context),
   };
 }
