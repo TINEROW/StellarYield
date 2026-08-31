@@ -322,9 +322,10 @@ describe('fallbackTreeResolution', () => {
         const result = resolveFallbackTree(candidates);
 
         expect(result.selected).toBe('fallback-2');
-        expect(result.rejected).toHaveLength(2);
-        expect(result.rejected[0].name).toBe('primary');
-        expect(result.rejected[1].name).toBe('fallback-1');
+        expect(result.rejected).toEqual([
+            { name: 'primary', reason: 'critical feature missing' },
+            { name: 'fallback-1', reason: 'breaking changes' },
+        ]);
     });
 
     it('returns null when all candidates are incompatible', () => {
@@ -336,7 +337,10 @@ describe('fallbackTreeResolution', () => {
         const result = resolveFallbackTree(candidates);
 
         expect(result.selected).toBeNull();
-        expect(result.rejected).toHaveLength(2);
+        expect(result.rejected).toEqual([
+            { name: 'primary', reason: 'version too old' },
+            { name: 'fallback-1', reason: 'missing feature' },
+        ]);
     });
 
     it('produces a deterministic result on repeated runs', () => {
