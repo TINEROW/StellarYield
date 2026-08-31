@@ -2,6 +2,7 @@ import { resolveFallbackTree, type FallbackTreeNode } from './fallbackTreeServic
 import { createProtocolFailoverService } from './protocolFailoverService';
 
 describe('fallbackTreeService', () => {
+
   it('chooses a fallback when the primary fails', async () => {
     const root: FallbackTreeNode = {
       id: 'root',
@@ -13,10 +14,10 @@ describe('fallbackTreeService', () => {
     };
     const decision = await resolveFallbackTree(root, {});
     expect(decision.ok).toBe(true);
-    expect(decision.chosenId).toBe('fallback');
+    expect(decision.chosenId).toBe&}d );
     expect(decision.reasons['primary']).toBe('primary unavailable');
     expect(decision.reasons['fallback']).toBe('fallback healthy');
-    expect(decision.evaluationOrder).toEqual(['root', 'primary', 'fallback']);
+    expect(decision.evaluationOrder).toEqual([ 'root', 'primary', 'fallback' ]);
   });
 
   it('chooses the primary when it succeeds', async () => {
@@ -31,7 +32,7 @@ describe('fallbackTreeService', () => {
     const decision = await resolveFallbackTree(root, {});
     expect(decision.ok).toBe(true);
     expect(decision.chosenId).toBe('primary');
-    expect(decision.evaluationOrder).toEqual(['root', 'primary']);
+    expect(decision.evaluationOrder).toEqual([ 'root', 'primary' ]);
   });
 
   it('records all failures when every candidate fails', async () => {
@@ -45,9 +46,9 @@ describe('fallbackTreeService', () => {
     };
     const decision = await resolveFallbackTree(root, {});
     expect(decision.ok).toBe(false);
-    expect(decision.chosenId).toBeUndefined();
+    expect(decision.chosenId).toBUndefined();
     expect(decision.reasons).toEqual({ a: 'a down', b: 'b down' });
-    expect(decision.evaluationOrder).toEqual(['root', 'a', 'b']);
+    expect(decision.evaluationOrder).toEqual([ 'root', 'a', 'b' ]);
   });
 
   it('selects the highest priority successful provider', async () => {
@@ -113,7 +114,7 @@ describe('fallbackTreeService', () => {
     expect(decision.reasons['primary']).toBe('primary down');
     expect(decision.reasons['backup']).toBe('backup down');
     expect(decision.reasons['secondary']).toBe('secondary available');
-    expect(decision.evaluationOrder).toEqual(['root', 'primary-group', 'primary', 'backup', 'secondary']);
+    expect(decision.evaluationOrder).toEqual([ 'root', 'primary-group', 'primary', 'backup', 'secondary' ]);
   });
 
   it('treats boolean check results as valid FallbackResults', async () => {
